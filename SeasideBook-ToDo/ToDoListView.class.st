@@ -54,6 +54,7 @@ ToDoListView >> remove: anItem [
 { #category : #rendering }
 ToDoListView >> renderContentOn: html [
 	self renderHeadingOn: html.
+	self renderHeadingOn2: html.
 	html
 		form: [ 
 			html unorderedList: [ self renderItemsOn: html ].
@@ -63,6 +64,25 @@ ToDoListView >> renderContentOn: html [
 				callback: [ self add ];
 				text: 'Add' ].
 	html render: editor
+]
+
+{ #category : #rendering }
+ToDoListView >> renderHeadingOn2: html [
+	|helpId|
+	helpId := html nextId.
+	(html heading)
+		class: 'helplink';
+		onClick: ((html jQuery id: helpId)
+			slideToggle: 1 seconds);
+"		onClick: ((html jQuery ajax)
+			id: helpId;
+			callback: [ visible := visible not ]);"
+		with: self model title.
+	(html div)
+		id: helpId;
+		class: 'help';
+		style: 'display: none';
+		with: 'The ToDo app enhanced with jQuery'
 ]
 
 { #category : #rendering }
@@ -101,26 +121,37 @@ ToDoListView >> renderItemsOn: html [
 
 { #category : #rendering }
 ToDoListView >> style [
-	^ 'body {
+^ '
+.help {
+    padding: 1em;
+    margin-bottom: 1em;
+    border: 1px solid #008aff;
+    background-color: #e6f4ff;
+}
+.helplink {
+    cursor: help;
+}
+
+body {
     color: #222;
     font-size: 75%;
     font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-	}
-	h1 {
+}
+h1 {
     color: #111;
     font-size: 2em;
     font-weight: normal;
     margin-bottom: 0.5em;
-	}
-	ul {
+}
+ul {
     list-style: none;
     padding-left: 0;
     margin-bottom: 1em;
-	}
-	li.overdue {
+}
+li.overdue {
     color: #8a1f11;
-	}
-	li.done {
+}
+li.done {
     color: #264409;
-	}'
+}'
 ]
