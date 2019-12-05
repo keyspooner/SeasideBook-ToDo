@@ -8,9 +8,14 @@ Class {
 }
 
 { #category : #'class initialization' }
-ToDoListView class >> initialize [ 
+ToDoListView class >> initialize [
 	"self initialize"
-	WAAdmin register: self asApplicationAt: 'todo'
+
+	| application |
+	application := WAAdmin register: self asApplicationAt: 'todo'.
+	application
+		addLibrary: JQDeploymentLibrary;
+		addLibrary: JQUiDeploymentLibrary
 ]
 
 { #category : #rendering }
@@ -48,7 +53,7 @@ ToDoListView >> remove: anItem [
 
 { #category : #rendering }
 ToDoListView >> renderContentOn: html [
-	html heading: self model title.
+	self renderHeadingOn: html.
 	html
 		form: [ 
 			html unorderedList: [ self renderItemsOn: html ].
@@ -58,6 +63,13 @@ ToDoListView >> renderContentOn: html [
 				callback: [ self add ];
 				text: 'Add' ].
 	html render: editor
+]
+
+{ #category : #rendering }
+ToDoListView >> renderHeadingOn: html [
+  html heading
+        onClick: ((html jQuery this effect) highlight; color: '#f00'); 
+        with: self model title.
 ]
 
 { #category : #rendering }
