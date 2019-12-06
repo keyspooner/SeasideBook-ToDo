@@ -2,7 +2,9 @@ Class {
 	#name : #ToDoListView,
 	#superclass : #WAComponent,
 	#instVars : [
-		'editor'
+		'editor',
+		'visible',
+		'listId'
 	],
 	#category : #'SeasideBook-ToDo-View'
 }
@@ -14,10 +16,10 @@ ToDoListView class >> initialize [
 	| application |
 	application := WAAdmin register: self asApplicationAt: 'todo'.
 	application
-"		addLibrary: JQDeploymentLibrary;
-		addLibrary: JQUiDeploymentLibrary"
 		addLibrary: PTDevelopmentLibrary;
-		addLibrary: SUDevelopmentLibrary
+		addLibrary: SUDevelopmentLibrary;
+		addLibrary: JQDeploymentLibrary;
+		addLibrary: JQUiDeploymentLibrary
 ]
 
 { #category : #rendering }
@@ -43,6 +45,32 @@ ToDoListView >> edit: anItem [
 ]
 
 { #category : #accessing }
+ToDoListView >> editor [
+	^ editor
+]
+
+{ #category : #accessing }
+ToDoListView >> editor: anObject [
+	^ editor := anObject
+]
+
+{ #category : #initialization }
+ToDoListView >> initialize [ 
+	super initialize.
+	visible := false
+]
+
+{ #category : #accessing }
+ToDoListView >> listId [
+	^ listId
+]
+
+{ #category : #accessing }
+ToDoListView >> listId: anObject [
+	listId := anObject
+]
+
+{ #category : #accessing }
 ToDoListView >> model [ 
 	^ ToDoList default
 ]
@@ -55,12 +83,20 @@ ToDoListView >> remove: anItem [
 
 { #category : #rendering }
 ToDoListView >> renderContentOn: html [
-	self renderHeadingOnScripta2: html.
+	self renderHeadingOnJquery: html.
+	self renderHeadingOnJQuery2: html.
 	html
 		form: [ 
-			html unorderedList: [ self renderItemsOn: html ].
-			html submitButton
-				text: 'Save'.
+			(html unorderedList)
+				id: (listId := html nextId);
+				script: ((html jQuery new sortable)
+					onStop: (html jQuery ajax
+						callback: [:items | self model items: items]
+						passengers: (html jQuery this find: 'li'));
+					axis: 'y');
+				with: [ self renderItemsOn: html].
+			"html submitButton
+				text: 'Save'."
 			html submitButton
 				callback: [ self add ];
 				text: 'Add' ].
@@ -99,10 +135,55 @@ ToDoListView >> renderHeadingOnBasic: html [
 ]
 
 { #category : #rendering }
+ToDoListView >> renderHeadingOnJQuery2: html [
+	| helpId |
+	helpId := html nextId.
+	(html heading)
+		class: 'helplink';
+		onClick: ((html jQuery id: helpId)
+			slideToggle: 1 seconds);
+		onClick: ((html jQuery ajax)
+			id: helpId;
+			callback: [ visible := visible not ]);
+		with: self model title.
+	(html div)
+		id: helpId;
+		class: 'help';
+		style: 'display: none';
+		with: 'The todo application enhanced with jQuery'
+]
+
+{ #category : #rendering }
+ToDoListView >> renderHeadingOnJquery: html [
+  html heading 
+	onClick: html jQuery this effect highlight;
+	with: self model title.
+]
+
+{ #category : #rendering }
 ToDoListView >> renderHeadingOnScripta2: html [
   html heading 
 	onClick: (html scriptaculous effect highlight; startColor: Color blue);
 	with: self model title.
+]
+
+{ #category : #rendering }
+ToDoListView >> renderHeadingOnScripta3: html [
+	| helpId |
+	helpId := html nextId.
+	html heading
+		class: 'helplink';
+		onClick: (html scriptaculous effect 
+			id: helpId;
+			toggleAppear);
+		onClick: (html scriptaculous request 
+			callback: [ visible := visible not ]);
+		with: self model title.
+	html div
+		id: helpId;
+		class: 'help';
+		style: 'display: none';
+		with: 'The todo application from the Seaside Book'
 ]
 
 { #category : #rendering }
@@ -121,7 +202,75 @@ ToDoListView >> renderItem: anItem on: html [
 			html checkbox
 				value: anItem done;
 				callback: [ :value | anItem done: value ].
-			html render: anItem title.
+			html text: anItem title.
+			html space.
+			html anchor
+				callback: [ self edit: anItem ];
+				with: 'edit'.
+			html space.
+			html anchor 
+				callback: [ self remove: anItem ];
+				with: 'remove'
+			]
+]
+
+{ #category : #rendering }
+ToDoListView >> renderItemJQuery: anItem on: html [
+	(html listItem)
+		passenger: anItem;
+		class: 'done' if: anItem isDone;
+		class: 'overdue' if: anItem isOverdue;
+		with: [
+"			html checkbox
+				value: anItem done;
+				callback: [ :value | anItem done: value ]."
+			(html checkbox)
+				onChange: (((html jQuery id: listId) load)
+					serializeForm;
+					html: [ :ajaxHtml | self renderItemsOn: ajaxHtml ]);
+					value: anItem done;
+					callback: [ :value | anItem done: value ].
+			"(html span)
+                script: ((html scriptaculous inPlaceEditor)
+                    cancelControl: #button;
+                    triggerInPlaceEditor: [:value | anItem title: value];
+                    callback: [:htmlAjax | htmlAjax render: anItem title]);
+                with: anItem title."
+			html text: anItem title.
+			html space.
+			(html anchor)
+				callback: [ self edit: anItem ];
+				with: 'edit'.
+			html space.
+			(html anchor) 
+				callback: [ self remove: anItem ];
+				with: 'remove'
+			]
+]
+
+{ #category : #rendering }
+ToDoListView >> renderItemScripta: anItem on: html [
+	html listItem
+		passenger: anItem;
+		class: 'done' if: anItem isDone;
+		class: 'overdue' if: anItem isOverdue;
+		with: [
+"			html checkbox
+				value: anItem done;
+				callback: [ :value | anItem done: value ]."
+		html checkbox
+				onChange: (html scriptaculous updater
+					id: listId;
+					triggerForm: (html scriptaculous element up: 'form');
+					callback: [ :ajaxHtml | self renderItemsOn: ajaxHtml]);
+				value: anItem done;
+				callback: [ :value | anItem done: value ].
+			html span
+				script: (html scriptaculous inPlaceEditor 
+					cancelControl: #button;
+					triggerInPlaceEditor: [:value | anItem title: value];
+					callback: [:htmlAjax | htmlAjax render: anItem title]);
+				with: anItem title.
 			html space.
 			html anchor
 				callback: [ self edit: anItem ];
@@ -136,7 +285,11 @@ ToDoListView >> renderItem: anItem on: html [
 { #category : #rendering }
 ToDoListView >> renderItemsOn: html [
 	self model items 
-		do: [ :each | self renderItem: each on: html]
+		do: [ :each | 
+			"self renderItem: each on: html"
+			"self renderItemScripta: each on: html"
+			self renderItemJQuery: each on: html 
+			]
 ]
 
 { #category : #rendering }
@@ -173,5 +326,24 @@ li.overdue {
 }
 li.done {
     color: #264409;
+}
+
+li { cursor: move; }
+
+li form {
+    margin: 0;
+    display: inline;
 }'
+
+
+]
+
+{ #category : #accessing }
+ToDoListView >> visible [
+	^ visible
+]
+
+{ #category : #accessing }
+ToDoListView >> visible: anObject [
+	visible := anObject
 ]
