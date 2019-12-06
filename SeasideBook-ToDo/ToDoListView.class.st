@@ -14,8 +14,10 @@ ToDoListView class >> initialize [
 	| application |
 	application := WAAdmin register: self asApplicationAt: 'todo'.
 	application
-		addLibrary: JQDeploymentLibrary;
-		addLibrary: JQUiDeploymentLibrary
+"		addLibrary: JQDeploymentLibrary;
+		addLibrary: JQUiDeploymentLibrary"
+		addLibrary: PTDevelopmentLibrary;
+		addLibrary: SUDevelopmentLibrary
 ]
 
 { #category : #rendering }
@@ -53,8 +55,7 @@ ToDoListView >> remove: anItem [
 
 { #category : #rendering }
 ToDoListView >> renderContentOn: html [
-	self renderHeadingOn: html.
-	self renderHeadingOn2: html.
+	self renderHeadingOnScripta2: html.
 	html
 		form: [ 
 			html unorderedList: [ self renderItemsOn: html ].
@@ -90,6 +91,25 @@ ToDoListView >> renderHeadingOn: html [
   html heading
         onClick: ((html jQuery this effect) highlight; color: '#f00'); 
         with: self model title.
+]
+
+{ #category : #rendering }
+ToDoListView >> renderHeadingOnBasic: html [
+  html heading with: self model title.
+]
+
+{ #category : #rendering }
+ToDoListView >> renderHeadingOnScripta2: html [
+  html heading 
+	onClick: (html scriptaculous effect highlight; startColor: Color blue);
+	with: self model title.
+]
+
+{ #category : #rendering }
+ToDoListView >> renderHeadingOnScripta: html [
+  html heading 
+	onClick: html scriptaculous effect highlight;
+	with: self model title.
 ]
 
 { #category : #rendering }
